@@ -11,10 +11,21 @@
 ;; Set up the visible bell
 (setq visible-bell t) 
 
+;; Font Configuration ----------------------------------------------------------
+
 (set-face-attribute 'default nil :family "Fira Code Retina" :height 150)
+
+;; Set the fixed pitch face
+(set-face-attribute 'fixed-pitch nil :family"Fira Code Retina" :height 260)
+
+;; Set the variable pitch face
+(set-face-attribute 'variable-pitch nil :family "Cantarell" :height 260 :weight 'regular)
 
 ;; Make ESC quit prompt
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
+;; Wrap lines
+(global-visual-line-mode t)
 
 ;; Initialize package sources
 (require 'package)
@@ -171,6 +182,31 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-  (use-package org)
-(require 'org-bullets)
-(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+(defun clover/org-mode-setup()
+  (variable-pitch-mode)
+  (setq evil-auto-indent nil))
+
+;; Org Mode
+
+(defun clover/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+(use-package org
+  :hook (org-mode . clover/org-mode-setup)
+  :config
+  (setq org-ellipsis " ↴"))
+
+;; Hides the wrap characters, like the * for bold
+(setq org-hide-emphasis-markers t)
+(setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●"))
+
+;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
