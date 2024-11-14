@@ -9,6 +9,7 @@
 (menu-bar-mode -1)	;Disable the menu bar
 
 ;; Set up the visible bell
+<<<<<<< HEAD
 (setq visible-bell t) 
 
 ;; Font Configuration ----------------------------------------------------------
@@ -20,13 +21,23 @@
 
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :family "Cantarell" :height 260 :weight 'regular)
+=======
+; (setq visible-bell t) 
+
+(set-face-attribute 'default nil :family "Fira Code Retina" :height 150)
+
+(load-theme 'tango-dark)
+>>>>>>> 4013c83 (initial init.el config commit)
 
 ;; Make ESC quit prompt
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
+<<<<<<< HEAD
 ;; Wrap lines
 (global-visual-line-mode t)
 
+=======
+>>>>>>> 4013c83 (initial init.el config commit)
 ;; Initialize package sources
 (require 'package)
 
@@ -45,6 +56,7 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+<<<<<<< HEAD
 ;; Enable line numbers
 (column-number-mode)
 (global-display-line-numbers-mode t)
@@ -56,6 +68,8 @@
 		eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
+=======
+>>>>>>> 4013c83 (initial init.el config commit)
 (use-package ivy
   :diminish 
   :bind (("C-s" . swiper)
@@ -70,6 +84,7 @@
 	 ("C-d" . ivy-switch-buffer-kill)
 	 :map ivy-reverse-i-search-map
 	 ("C-k" . ivy-previous-line)
+<<<<<<< HEAD
   	 ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
@@ -210,3 +225,13 @@
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+=======
+	 ("C-d" . ivy-reverse-i-search-kill))
+  :config
+  (ivy-mode 1))
+
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1))
+
+>>>>>>> 4013c83 (initial init.el config commit)
