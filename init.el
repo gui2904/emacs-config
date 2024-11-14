@@ -9,39 +9,17 @@
 (menu-bar-mode -1)	;Disable the menu bar
 
 ;; Set up the visible bell
-<<<<<<< HEAD
 (setq visible-bell t) 
 
-;; Font Configuration ----------------------------------------------------------
-
-(set-face-attribute 'default nil :family "Fira Code Retina" :height 150)
-
-;; Set the fixed pitch face
-(set-face-attribute 'fixed-pitch nil :family"Fira Code Retina" :height 260)
-
-;; Set the variable pitch face
-(set-face-attribute 'variable-pitch nil :family "Cantarell" :height 260 :weight 'regular)
-=======
-; (setq visible-bell t) 
-
-(set-face-attribute 'default nil :family "Fira Code Retina" :height 150)
-
-(load-theme 'tango-dark)
->>>>>>> 4013c83 (initial init.el config commit)
+(set-face-attribute 'default nil :family "Fira Code Retina" :height 110)
 
 ;; Make ESC quit prompt
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-<<<<<<< HEAD
-;; Wrap lines
-(global-visual-line-mode t)
-
-=======
->>>>>>> 4013c83 (initial init.el config commit)
 ;; Initialize package sources
 (require 'package)
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+ (setq package-archives '(("melpa" . "https://melpa.org/packages/")
 			 ("org" . "https://orgmode.org/elpa/")
 			 ("elpa" . "https://elpa.gnu.org/packages/")))
 
@@ -56,7 +34,6 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-<<<<<<< HEAD
 ;; Enable line numbers
 (column-number-mode)
 (global-display-line-numbers-mode t)
@@ -68,8 +45,6 @@
 		eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-=======
->>>>>>> 4013c83 (initial init.el config commit)
 (use-package ivy
   :diminish 
   :bind (("C-s" . swiper)
@@ -84,7 +59,6 @@
 	 ("C-d" . ivy-switch-buffer-kill)
 	 :map ivy-reverse-i-search-map
 	 ("C-k" . ivy-previous-line)
-<<<<<<< HEAD
   	 ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
@@ -151,6 +125,35 @@
 (require 'evil)
 (evil-mode 1)
 
+;; tree sit
+(setq treesit-language-source-alist
+      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+        (zig "https://github.com/maxxnino/tree-sitter-zig")
+        (rust "https://github.com/tree-sitter/tree-sitter-rust")
+        (cmake "https://github.com/uyha/tree-sitter-cmake")
+        (css "https://github.com/tree-sitter/tree-sitter-css")
+        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+        (go "https://github.com/tree-sitter/tree-sitter-go")
+        (html "https://github.com/tree-sitter/tree-sitter-html")
+        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+        (json "https://github.com/tree-sitter/tree-sitter-json")
+        (make "https://github.com/alemuller/tree-sitter-make")
+        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+        (python "https://github.com/tree-sitter/tree-sitter-python")
+        (toml "https://github.com/tree-sitter/tree-sitter-toml")
+        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+(setq treesit-font-lock-level 4)
+
+(use-package treesit-auto
+  :defer t
+  :config
+  (global-treesit-auto-mode)
+  (treesit-auto-add-to-auto-mode-alist 'all)
+  (setq treesit-auto-install t)
+
 ;(defun clover/evil-hook ()
 ;  (dolist (mode '(custom-mode
 ;		  eshell-mode
@@ -197,41 +200,36 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-(defun clover/org-mode-setup()
-  (variable-pitch-mode)
-  (setq evil-auto-indent nil))
-
 ;; Org Mode
+  (use-package org)
+(require 'org-bullets)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 
-(defun clover/org-mode-setup ()
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
-
-(use-package org
-  :hook (org-mode . clover/org-mode-setup)
+;; Rust
+(use-package rust-mode
+  :defer t
+  :init
+  (setq rust-mode-treesitter-derive t)
+  (setq rust-format-on-save t)
   :config
-  (setq org-ellipsis " ↴"))
+  (add-hook 'rust-ts-mode-hook #'lsp)
+  (add-hook 'rust-ts-mode-hook
+            (lambda () (prettify-symbols-mode)))
+  (add-hook 'before-save-hook 'lsp-format-buffer)
+  (add-hook 'rust-ts-mode-hook
+          (lambda () (setq indent-tabs-mode nil))))
 
-;; Hides the wrap characters, like the * for bold
-(setq org-hide-emphasis-markers t)
-(setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●"))
 
-;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-=======
-	 ("C-d" . ivy-reverse-i-search-kill))
+;; Typescript
+(use-package tsx-ts-mode
+  :defer t
+  :init
+  (setq rust-mode-treesitter-derive t)
+  (setq rust-format-on-save t)
   :config
-  (ivy-mode 1))
-
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1))
-
->>>>>>> 4013c83 (initial init.el config commit)
+  (add-hook 'rust-ts-mode-hook #'lsp)
+  (add-hook 'rust-ts-mode-hook
+            (lambda () (prettify-symbols-mode)))
+  (add-hook 'before-save-hook 'lsp-format-buffer)
+  (add-hook 'rust-ts-mode-hook
+          (lambda () (setq indent-tabs-mode nil))))
