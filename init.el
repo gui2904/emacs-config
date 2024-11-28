@@ -1,3 +1,6 @@
+;; Basic UI configuration
+
+(defvar clover/default-font-size 120)
 
 (setq inhibit-startup-message t)
 
@@ -8,18 +11,34 @@
 
 (menu-bar-mode -1)	;Disable the menu bar
 
+(setq visual-line-mode t)
+
 ;; Set up the visible bell
 (setq visible-bell t) 
 
-(set-face-attribute 'default nil :family "Fira Code Retina" :height 110)
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                term-mode-hook
+                shell-mode-hook
+                eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-;; Make ESC quit prompt
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+;; Font Configuration ----------------------------------------------------------
+
+(set-face-attribute 'default nil :family "Fira Code Retina" :height clover/default-font-size)
+
+;; Set the fixed pitch face
+(set-face-attribute 'fixed-pitch nil :family "Fira Code Retina" :height 120)
+
+;; Set the variable pitch face
+(set-face-attribute 'variable-pitch nil :family "Cantarell" :height 100 :weight 'regular)
+
+;; Package Manager Configuration
 
 ;; Initialize package sources
 (require 'package)
 
- (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
 			 ("org" . "https://orgmode.org/elpa/")
 			 ("elpa" . "https://elpa.gnu.org/packages/")))
 
@@ -38,13 +57,7 @@
 (column-number-mode)
 (global-display-line-numbers-mode t)
 
-;; Disable line numbers for some modes 
-(dolist (mode '(org-mode-hook
-		term-mode-hook
-		shell-mode-hook
-		eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
+;; Ivy config ----
 (use-package ivy
   :diminish 
   :bind (("C-s" . swiper)
@@ -63,11 +76,6 @@
   :config
   (ivy-mode 1))
 
-;; OLD
-;;(global-set-key (kbd "C-M-j") 'counsel-switch-buffer)
-;; Define key example
-;;(define-key emacs-lisp-mode-map (kbd "C-x M-t") 'counsel-load-theme) ;; this would bind the function that loads theme
-
 ;; M-x all-the-icons-install-fonts
 (use-package all-the-icons)
 
@@ -78,6 +86,8 @@
 (use-package doom-themes ;; counsel-load-theme
   :init (load-theme 'doom-laserwave t))
 
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; which key mini buffer
 (require 'which-key)
@@ -106,24 +116,21 @@
   ([remap describe-variable] . counsel-describe-variable) ;; C-h v
   ([remap describe-key] . helpful-key)) ;; C-h k
 
-;; Package to define keys
-;(use-package general
-  ;:config
-  ;general-create-definer clover/leader-keys
-    ;:keymaps '(normal insert visual emacs)
-    ;:prefix "SPC"
-    ;:prefix "C-SPC")
+;; Key Binding Configuration ---------------------------------------------------
 
-  ;(clover/leader-keys
-   ;"t" '(:ignore t :which-key "toggles")
-   ;"tt" '(counsel-load-theme :which-key "choose theme")))
+;; Make ESC quit prompts
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-;;
+
 (unless (package-installed-p 'evil)
   (package-install 'evil))
 
+;; Enable Evil
+(setq evil-want-keybinding nil)
 (require 'evil)
 (evil-mode 1)
+(when (require 'evil-collection nil t)
+  (evil-collection-init))
 
 ;; tree sit
 (setq treesit-language-source-alist
@@ -152,58 +159,89 @@
   :config
   (global-treesit-auto-mode)
   (treesit-auto-add-to-auto-mode-alist 'all)
-  (setq treesit-auto-install t)
+  (setq treesit-auto-install t))
 
-;(defun clover/evil-hook ()
-;  (dolist (mode '(custom-mode
-;		  eshell-mode
-;		  git-rebase-mode
-;		  erc-mode
-;		  circe-server-mode
-;		  circe-chat-mode
-;		  circe-query-mode
-;		  sauron-mode
-;		  term-mode))
-;    (add-to-list 'evil-emacs-state-modes mode)))
+;; Projectile Configuration ----------------------------------------------------
 
-;(use-package evil
-;  :init
-;  (setq evil-want-integration t)
-;  (setq evil-want-keybinding nil)
-;  (setq evil-want-C-u-scroll t)
-;  (setq evil-want-C-i-jump nil)
-;  :hook (evil-mode . clover/evil-hook)
-;  :config
-;  (evil-mode 1)
-;  (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state)
-;  (define-key evil-insert-state-map (kbd "C-h") 'evil-delete-backward-char-and-join)
-
-  ;; Use visual line motions even outside of visual-line-mode buffers
-;  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-;  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-
-;  (evil-set-initial-state 'messages-buffer-mode 'normal)
-;  (evil-set-initial-state 'dashboard-mode 'normal))
-
-(setq evil-want-keybinding nil)
-(require 'evil)
-(when (require 'evil-collection nil t)
-  (evil-collection-init))
-
-(unless (package-installed-p 'projectile)
-  (package-install 'projectile))
-(require 'projectile)
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-(projectile-mode +1)
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  (when (file-directory-p "~/Projects/Code")
+    (setq projectile-project-search-path '("~/Projects/Code")))
+  (setq projectile-switch-project-action #'projectile-dired))
+  
 
 ;; C-c p f to find file, then M-o for more things to do
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-;; Org Mode
-  (use-package org)
-(require 'org-bullets)
-(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+;; Magit config--------------------------
+
+(use-package magit
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(defun clover/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+;; Org mode -----------------
+
+(require 'org)
+
+;; Set faces for heading levels
+(dolist (face '((org-level-1 . 1.2)
+		(org-level-2 . 1.1)
+		(org-level-3 . 1.05)
+		(org-level-4 . 1.0)
+		(org-level-5 . 1.1)
+		(org-level-6 . 1.1)
+		(org-level-7 . 1.1)
+		(org-level-8 . 1.1)))
+  (set-face-attribute (car face) nil :family "Cantarell" :weight 'regular :height (cdr face)))
+
+;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+
+
+(use-package org
+  :hook (org-mode . clover/org-mode-setup)
+  :config
+  (setq org-ellipsis " ↴"
+	org-hide-emphasis-markers t)) ;; Hides the wrap characters, like the * for bold
+
+;;(use-package org-bullets
+;;  :ensure t  ;; Ensures org-bullets is installed if not already
+;;  :hook (org-mode . org-bullets-mode)
+;;  :custom
+;;  (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+
+(defun clover/org-mode-visual-fill ()
+  (setq visual-fill-column-width 100
+        visual-fill-column-center-text t)
+  (visual-fill-column-mode 1))
+
+(use-package visual-fill-column
+  :hook (org-mode . clover/org-mode-visual-fill))
 
 ;; Rust
 (use-package rust-mode
@@ -221,18 +259,18 @@
 
 
 ;; Typescript
-(use-package tsx-ts-mode
-  :defer t
-  :init
-  (setq rust-mode-treesitter-derive t)
-  (setq rust-format-on-save t)
-  :config
-  (add-hook 'rust-ts-mode-hook #'lsp)
-  (add-hook 'rust-ts-mode-hook
-            (lambda () (prettify-symbols-mode)))
-  (add-hook 'before-save-hook 'lsp-format-buffer)
-  (add-hook 'rust-ts-mode-hook
-          (lambda () (setq indent-tabs-mode nil))))
+;;(use-package tsx-ts-mode
+;;  :defer t
+;;  :init
+;;  (setq rust-mode-treesitter-derive t)
+;;  (setq rust-format-on-save t)
+;;  :config
+;;  (add-hook 'rust-ts-mode-hook #'lsp)
+;;  (add-hook 'rust-ts-mode-hook
+;;            (lambda () (prettify-symbols-mode)))
+;;  (add-hook 'before-save-hook 'lsp-format-buffer)
+;;  (add-hook 'rust-ts-mode-hook
+;;          (lambda () (setq indent-tabs-mode nil))))
 
 ;; backup files setup
 (setq backup-directory-alist `(("." . "./.saves")))
