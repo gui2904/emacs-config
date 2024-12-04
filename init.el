@@ -283,11 +283,17 @@
   :hook (org-mode . clover/org-mode-visual-fill))
 
 (org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)))
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)))
 
-(push '("conf-unix" . conf-unix) org-src-lang-modes)
+  (push '("conf-unix" . conf-unix) org-src-lang-modes)
+
+ (require 'org-tempo)
+
+(add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+(add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+;; (add-to-list 'org-structure-template-alist '("py" . "src python"))
 
 ;; Automatically tangle our Emacs.org config file when we save it
 (defun clover/org-babel-tangle-config ()
@@ -298,6 +304,30 @@
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'clover/org-babel-tangle-config)))
+
+(use-package rustic
+  :ensure
+  :config
+  ;; uncomment for less flashiness
+  ;; (setq lsp-eldoc-hook nil)
+  ;; (setq lsp-enable-symbol-highlighting nil)
+  ;; (setq lsp-signature-auto-activate nil)
+
+  ;; comment to disable rustfmt on save
+                                        ;(setq rustic-format-on-save t)
+  (setq rustic-format-trigger 'on-save))
+
+(defun rustic-mode-auto-save-hook ()
+  "Enable auto-saving in rustic-mode buffers."
+  (when buffer-file-name
+    (setq-local compilation-ask-about-save nil)))
+(add-hook 'rustic-mode-hook 'rustic-mode-auto-sav-hook)
+
+;(use-package typescript-mode
+;  :mode "\\.ts\\'"
+ ; :hook (typescript-mode . lsp-deferred)
+  ;:config
+ ; (setq typescript-indent-level 2))
 
 (use-package projectile
   :diminish projectile-mode
@@ -322,5 +352,7 @@
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+
 
 
