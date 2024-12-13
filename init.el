@@ -329,6 +329,33 @@
   ;:config
  ; (setq typescript-indent-level 2))
 
+(setq treesit-language-source-alist
+      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+        (cmake "https://github.com/uyha/tree-sitter-cmake")
+        (css "https://github.com/tree-sitter/tree-sitter-css")
+        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+        (go "https://github.com/tree-sitter/tree-sitter-go")
+        (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+        (html "https://github.com/tree-sitter/tree-sitter-html")
+        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+        (json "https://github.com/tree-sitter/tree-sitter-json")
+        (make "https://github.com/alemuller/tree-sitter-make")
+        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+        (python "https://github.com/tree-sitter/tree-sitter-python")
+        (toml "https://github.com/tree-sitter/tree-sitter-toml")
+        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+(use-package nix-mode
+  :defer t
+  :ensure t)
+(use-package nix-ts-mode
+  :mode "\\.nix\\'"
+  :ensure t
+  :defer t)
+
 (use-package projectile
   :diminish projectile-mode
   :config (projectile-mode)
@@ -352,6 +379,30 @@
 
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+
+(unless (file-exists-p "~/.emacs-temp")
+  (mkdir "~/.emacs-temp"))
+
+(let ((backup-dir "~/.emacs-temp/")
+      (auto-saves-dir "~/.emacs-temp/"))
+  (dolist (dir (list backup-dir auto-saves-dir))
+    (when (not (file-directory-p dir))
+      (make-directory dir t)))
+  (setq backup-directory-alist `(("." . ,backup-dir))
+        auto-save-file-name-transforms `((".*" ,auto-saves-dir t))
+        auto-save-list-file-prefix (concat auto-saves-dir ".saves-")
+        tramp-backup-directory-alist `((".*" . ,backup-dir))
+        tramp-auto-save-directory auto-saves-dir
+        ))
+
+(setq backup-by-copying t    ; Don't delink hardlinks                           
+      delete-old-versions t  ; Clean up the backups                             
+      version-control t      ; Use version numbers on backups,                  
+      kept-new-versions 5    ; keep some new versions                           
+      kept-old-versions 2)   ; and some old ones, too                           
+
+(setq lock-file-name-transforms
+    '(("\\`/.*/\\([^/]+\\)\\'" "/var/tmp/\\1" t)))
 
 
 
