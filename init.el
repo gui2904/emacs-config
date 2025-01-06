@@ -43,10 +43,15 @@
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-(set-face-attribute 'default nil :family "Fira Code Retina" :height clover/default-font-size)
+(add-hook 'prog-mode-hook
+          (lambda ()
+            (setq tab-width 4)
+            (setq indent-tabs-mode t)))
+
+(set-face-attribute 'default nil :family "Fira Code" :height clover/default-font-size)
 
 ;; Set the fixed pitch face
-(set-face-attribute 'fixed-pitch nil :family "Fira Code Retina" :height 120)
+(set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 120)
 
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil :family "Cantarell" :height 100 :weight 'regular)
@@ -57,6 +62,12 @@
 (unless (package-installed-p 'evil)
   (package-install 'evil))
 
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :init
+  (evil-collection-init))
+
 ;; Enable Evil
 (setq evil-want-keybinding nil)
 (require 'evil)
@@ -64,8 +75,26 @@
 (when (require 'evil-collection nil t)
   (evil-collection-init))
 
+;; Makes "jk" quit insert mode
+(defun my-jk ()
+  (interactive)
+  (let* ((initial-key ?j)
+         (final-key ?k)
+         (timeout 0.5)
+         (event (read-event nil nil timeout)))
+    (if event
+        ;; timeout met
+        (if (and (characterp event) (= event final-key))
+            (evil-normal-state)
+          (insert initial-key)
+          (push event unread-command-events))
+      ;; timeout exceeded
+      (insert initial-key))))
+
+(define-key evil-insert-state-map (kbd "j") 'my-jk)
+
 (use-package doom-themes ;; counsel-load-theme
-  :init (load-theme 'doom-laserwave t))
+  :init (load-theme 'doom-peacock t))
 
 (use-package all-the-icons)
 
@@ -305,6 +334,15 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'clover/org-babel-tangle-config)))
 
+(require 'ox-md)
+
+  (defun org-to-readme ()
+    "Export the current Org file to README.md."
+    (interactive)
+    (let ((output-file "README.md"))
+      (org-export-to-file 'md output-file)
+      (message "Exported to %s" output-file)))
+
 (use-package rustic
   :ensure
   :config
@@ -328,6 +366,16 @@
  ; :hook (typescript-mode . lsp-deferred)
   ;:config
  ; (setq typescript-indent-level 2))
+
+(use-package tree-sitter
+  :ensure t
+  :config
+  (global-tree-sitter-mode))
+
+(use-package tree-sitter-langs
+  :ensure t)
+
+(setq go-ts-mode-indent-offset 4)
 
 (setq treesit-language-source-alist
       '((bash "https://github.com/tree-sitter/tree-sitter-bash")

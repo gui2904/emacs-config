@@ -61,17 +61,21 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
                   eshell-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
+  (add-hook 'prog-mode-hook
+            (lambda ()
+              (setq tab-width 4)
+              (setq indent-tabs-mode t)))
 
-#+end_src
+    #+end_src
 
 ** Font Configuration
 
 #+begin_src emacs-lisp 
 
-  (set-face-attribute 'default nil :family "Fira Code Retina" :height clover/default-font-size)
+  (set-face-attribute 'default nil :family "Fira Code" :height clover/default-font-size)
 
   ;; Set the fixed pitch face
-  (set-face-attribute 'fixed-pitch nil :family "Fira Code Retina" :height 120)
+  (set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 120)
 
   ;; Set the variable pitch face
   (set-face-attribute 'variable-pitch nil :family "Cantarell" :height 100 :weight 'regular)
@@ -89,13 +93,38 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
   (unless (package-installed-p 'evil)
     (package-install 'evil))
 
+  (use-package evil-collection
+    :ensure t
+    :after evil
+    :init
+    (evil-collection-init))
+
   ;; Enable Evil
   (setq evil-want-keybinding nil)
   (require 'evil)
   (evil-mode 1)
   (when (require 'evil-collection nil t)
     (evil-collection-init))
-  
+
+  ;; Makes "jk" quit insert mode
+  (defun my-jk ()
+    (interactive)
+    (let* ((initial-key ?j)
+           (final-key ?k)
+           (timeout 0.5)
+           (event (read-event nil nil timeout)))
+      (if event
+          ;; timeout met
+          (if (and (characterp event) (= event final-key))
+              (evil-normal-state)
+            (insert initial-key)
+            (push event unread-command-events))
+        ;; timeout exceeded
+        (insert initial-key))))
+
+  (define-key evil-insert-state-map (kbd "j") 'my-jk)
+
+
 #+end_src
 
 * UI Configuration
@@ -106,7 +135,7 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 #+begin_src emacs-lisp
 
   (use-package doom-themes ;; counsel-load-theme
-    :init (load-theme 'doom-laserwave t))
+    :init (load-theme 'doom-peacock t))
 
 #+end_src
 
@@ -426,6 +455,19 @@ To execute or export code in =org-mode= code blocks, you will need to setup =org
   
 #+end_src
 
+#+begin_src emacs-lisp
+
+(require 'ox-md)
+
+  (defun org-to-readme ()
+    "Export the current Org file to README.md."
+    (interactive)
+    (let ((output-file "README.md"))
+      (org-export-to-file 'md output-file)
+      (message "Exported to %s" output-file)))
+  
+#+end_src
+
 
 * Development
 
@@ -526,6 +568,20 @@ This is a basic configuration for the TypeScript language so that .ts files acti
 
 
 *** Tree-Sitter
+
+#+begin_src emacs-lisp
+
+  (use-package tree-sitter
+    :ensure t
+    :config
+    (global-tree-sitter-mode))
+
+  (use-package tree-sitter-langs
+    :ensure t)
+
+  (setq go-ts-mode-indent-offset 4)
+
+#+end_src
 
 #+begin_src emacs-lisp
 
