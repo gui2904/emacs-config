@@ -195,37 +195,38 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
 #+begin_src emacs-lisp
 
-  ;; Ivy config ----
-  (use-package ivy
-    :diminish 
-    :bind (("C-s" . swiper)
-           :map ivy-minibuffer-map
-           ("TAB" . ivy-alt-done)
-           ("C-l" . ivy-alt-done)
-           ("C-j" . ivy-next-line)
-           ("C-k" . ivy-previous-line)
-           :map ivy-switch-buffer-map
-           ("C-k" . ivy-previous-line)
-           ("C-l" . ivy-done)
-           ("C-d" . ivy-switch-buffer-kill)
-           :map ivy-reverse-i-search-map
-           ("C-k" . ivy-previous-line)
-           ("C-d" . ivy-reverse-i-search-kill))
-    :config
-    (ivy-mode 1))
+    ;; Ivy config ----
+    (use-package ivy
+      :diminish 
+      :bind (("C-s" . swiper)
+             :map ivy-minibuffer-map
+             ("TAB" . ivy-alt-done)
+             ("C-l" . ivy-alt-done)
+             ("C-j" . ivy-next-line)
+             ("C-k" . ivy-previous-line)
+             :map ivy-switch-buffer-map
+             ("C-k" . ivy-previous-line)
+             ("C-l" . ivy-done)
+             ("C-d" . ivy-switch-buffer-kill)
+             :map ivy-reverse-i-search-map
+             ("C-k" . ivy-previous-line)
+             ("C-d" . ivy-reverse-i-search-kill))
+      :config
+      (ivy-mode 1))
 
-  ;; Little description next to the command 
-  (require 'ivy-rich)
-  (ivy-rich-mode 1)
-  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
+    ;; Little description next to the command 
+    (require 'ivy-rich)
+    (ivy-rich-mode 1)
+    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
 
-  ;; replace some commands for better ones
-  (use-package counsel
-    :bind (("M-x" . counsel-M-x)
-           ("C-x b" . counsel-ibuffer)
-           ("C-x C-f" . counsel-find-file)
-           :map minibuffer-local-map
-           ("C-r" . 'counsel-minibuffer-history)))
+    ;; replace some commands for better ones
+    (use-package counsel
+      :bind (("C-M-j" . 'counsel-switch-buffer)
+             ("M-x" . counsel-M-x)
+             ("C-x b" . counsel-ibuffer)
+             ("C-x C-f" . counsel-find-file)
+             :map minibuffer-local-map
+             ("C-r" . 'counsel-minibuffer-history)))
 
 #+end_src
 
@@ -831,6 +832,57 @@ For more thoughts on Eshell, check out these articles by Pierre Neidhardt:
 
 *** Dired
 
+*Key Bindings*
+
+**** Navigation:
+- =n= / =j= - next line
+- =p= / =k= - previous line
+- =j= / =J= - jump to file in buffer
+- =RET= - select file or directory
+-=^= - go to parent directory
+- =S-RET= / =g O= - Open file in “other” window
+- =M-RET= - Show file in other window without focusing (previewing files)
+- =g o= (=dired-view-file=) - Open file but in a “preview” mode, close with =q=
+- =g= / =g r= Refresh the buffer with =revert-buffer= after changing configuration (and after filesystem changes!)
+
+**** Marking files:
+- =m= - Marks a file
+-  =u= - Unmarks a file
+- =U= - Unmarks all files in buffer
+-  =* t= / =t= - Inverts marked files in buffer
+-  =% m= - Mark files in buffer using regular expression
+-  =*= - Lots of other auto-marking functions
+-  =k= / =K= - “Kill” marked items (refresh buffer with =g= / =g r= to get them back)
+-  Many operations can be done on a single file if there are no active marks!
+
+**** Copying and Renaming files:
+- =C= - Copy marked files (or if no files are marked, the current file)
+- Copying single and multiple files
+- =U= - Unmark all files in buffer
+- =R= - Rename marked files, renaming multiple is a move!
+- =% R= - Rename based on regular expression: =^test= , =old-\&=
+
+*Power command*: =C-x C-q= (=dired-toggle-read-only=) - Makes all file names in the buffer editable directly to rename them! Press =Z Z= to confirm renaming or =Z Q= to abort.
+
+**** Deleting files:
+- =D= - Delete marked file
+- =d= - Mark file for deletion
+- =x= - Execute deletion for marks
+- =delete-by-moving-to-trash= - Move to trash instead of deleting permanently
+
+**** Creating and extracting archives:
+- =Z= - Compress or uncompress a file or folder to (=.tar.gz=)
+- =c= - Compress selection to a specific file
+- =dired-compress-files-alist= - Bind compression commands to file extension
+
+**** Other common operations:
+- =T= - Touch (change timestamp)
+- =M= - Change file mode
+- =O= - Change file owner
+- =G= - Change file group
+- =S= - Create a symbolic link to this file
+- =L= - Load an Emacs Lisp file into Emacs
+
 #+begin_src emacs-lisp
 
   (autoload 'dired-single-buffer "dired-single" "" t)
@@ -847,6 +899,41 @@ For more thoughts on Eshell, check out these articles by Pierre Neidhardt:
     (evil-collection-define-key 'normal 'dired-mode-map
       "h" 'dired-up-directory
       "l" 'dired-find-file))
+
+  (use-package dired-open
+    :config
+    ;; Doesn't work as expected!
+    ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+    (setq dired-open-extensions '(("png" . "feh")
+                                  ("mkv" . "mpv"))))
+
+  (setq delete-by-moving-to-trash t)
+
+#+end_src
+
+*** dired hide dotfiles
+This allows to hide dotfiles from any directory with the purpose of getting a clearner view of the directory.
+
+#+begin_src emacs-lisp
+
+  (use-package dired-hide-dotfiles
+    :hook (dired-mode . dired-hide-dotfiles-mode)
+    :config
+    (evil-collection-define-key 'normal 'dired-mode-map
+      "H" 'dired-hide-dotfiles-mode))
+
+#+end_src
+
+*** all the icons dired
+
+#+begin_src emacs-lisp
+
+  (use-package all-the-icons-dired
+    :hook (dired-mode . all-the-icons-dired-mode)
+    :config
+    ;; Install fonts if not already installed
+    (unless (member "all-the-icons" (font-family-list))
+      (all-the-icons-install-fonts t))) ;; `t` skips confirmation
 
 #+end_src
 

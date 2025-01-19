@@ -156,7 +156,8 @@
 
 ;; replace some commands for better ones
 (use-package counsel
-  :bind (("M-x" . counsel-M-x)
+  :bind (("C-M-j" . 'counsel-switch-buffer)
+         ("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
          ("C-x C-f" . counsel-find-file)
          :map minibuffer-local-map
@@ -536,6 +537,28 @@
   (evil-collection-define-key 'normal 'dired-mode-map
     "h" 'dired-up-directory
     "l" 'dired-find-file))
+
+(use-package dired-open
+  :config
+  ;; Doesn't work as expected!
+  ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+  (setq dired-open-extensions '(("png" . "feh")
+                                ("mkv" . "mpv"))))
+
+(setq delete-by-moving-to-trash t)
+
+(use-package dired-hide-dotfiles
+  :hook (dired-mode . dired-hide-dotfiles-mode)
+  :config
+  (evil-collection-define-key 'normal 'dired-mode-map
+    "H" 'dired-hide-dotfiles-mode))
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :config
+  ;; Install fonts if not already installed
+  (unless (member "all-the-icons" (font-family-list))
+    (all-the-icons-install-fonts t))) ;; `t` skips confirmation
 
 
 
