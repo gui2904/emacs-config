@@ -1,3 +1,12 @@
+(defun clover/display-startup-time ()
+  (message "Emacs loaded in %s with %d garbage collections."
+           (format "%.2f seconds"
+                   (float-time
+                    (time-subtract after-init-time before-init-time)))
+           gcs-done))
+
+(add-hook 'emacs-startup-hook #'clover/display-startup-time)
+
 ;; Initialize package sources
 (require 'package)
 
@@ -15,6 +24,15 @@
 
 (require 'use-package)
 (setq use-package-always-ensure t)
+
+(use-package auto-package-update
+  :custom
+  (auto-package-update-interval 7) ;; interval to update in days
+  (auto-package-update-prompt-before-update t)
+  (auto-package-update-hide-results t) ;; hide updated packages, nil to show
+  :config
+  (auto-package-update-maybe) ;; will check wether it needs an update at startup time
+  (auto-package-update-at-time "09:00"))
 
 (defvar clover/default-font-size 120)
 
@@ -45,8 +63,10 @@
 
 (add-hook 'prog-mode-hook
           (lambda ()
-            (setq tab-width 4)
-            (setq indent-tabs-mode t)))
+            (setq-default tab-width 2)
+            (setq indent-tabs-mode nil)))
+
+(add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
 
 (set-face-attribute 'default nil :family "Fira Code" :height clover/default-font-size)
 
@@ -418,15 +438,11 @@
         (toml "https://github.com/tree-sitter/tree-sitter-toml")
         (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+        ;; (nix "https://github.com/nix-community/tree-sitter-nix")
         (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
-(use-package nix-mode
-  :defer t
-  :ensure t)
-(use-package nix-ts-mode
-  :mode "\\.nix\\'"
-  :ensure t
-  :defer t)
+;; (use-package nix-ts-mode
+;;  :mode "\\.nix\\'")
 
 (use-package projectile
   :diminish projectile-mode
@@ -523,30 +539,6 @@
 
   (eshell-git-prompt-use-theme 'powerline))
 
-(autoload 'dired-single-buffer "dired-single" "" t)
-(autoload 'dired-single-buffer-mouse "dired-single" "" t)
-(autoload 'dired-single-magic-buffer "dired-single" "" t)
-(autoload 'dired-single-toggle-buffer-name "dired-single" "" t)
-
-(use-package dired
-  :ensure nil
-  :commands (dired dired-jump)
-  :bind (("C-x C-j" . dired-jump))
-  :custom ((dired-listing-switches "-agho --group-directories-first")) ;; puts the directories first and files after in the dired view
-  :config
-  (evil-collection-define-key 'normal 'dired-mode-map
-    "h" 'dired-up-directory
-    "l" 'dired-find-file))
-
-(use-package dired-open
-  :config
-  ;; Doesn't work as expected!
-  ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
-  (setq dired-open-extensions '(("png" . "feh")
-                                ("mkv" . "mpv"))))
-
-(setq delete-by-moving-to-trash t)
-
 (use-package dired-hide-dotfiles
   :hook (dired-mode . dired-hide-dotfiles-mode)
   :config
@@ -559,7 +551,3 @@
   ;; Install fonts if not already installed
   (unless (member "all-the-icons" (font-family-list))
     (all-the-icons-install-fonts t))) ;; `t` skips confirmation
-
-
-
-

@@ -6,6 +6,21 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
 *NOTE*: I do not provide support
 
+* Startup Performance
+
+#+begin_src emacs-lisp
+
+  (defun clover/display-startup-time ()
+    (message "Emacs loaded in %s with %d garbage collections."
+             (format "%.2f seconds"
+                     (float-time
+                      (time-subtract after-init-time before-init-time)))
+             gcs-done))
+
+  (add-hook 'emacs-startup-hook #'clover/display-startup-time)
+
+#+end_src
+
 * Package System Setup
 
 #+begin_src emacs-lisp
@@ -27,6 +42,21 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
   (require 'use-package)
   (setq use-package-always-ensure t)
+
+#+end_src
+
+*** Automatically update
+
+#+begin_src emacs-lisp
+
+  (use-package auto-package-update
+    :custom
+    (auto-package-update-interval 7) ;; interval to update in days
+    (auto-package-update-prompt-before-update t)
+    (auto-package-update-hide-results t) ;; hide updated packages, nil to show
+    :config
+    (auto-package-update-maybe) ;; will check wether it needs an update at startup time
+    (auto-package-update-at-time "09:00"))
 
 #+end_src
 
@@ -63,8 +93,10 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
   (add-hook 'prog-mode-hook
             (lambda ()
-              (setq tab-width 4)
-              (setq indent-tabs-mode t)))
+              (setq-default tab-width 2)
+              (setq indent-tabs-mode nil)))
+
+  (add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
 
     #+end_src
 
@@ -627,6 +659,7 @@ This is a basic configuration for the TypeScript language so that .ts files acti
           (toml "https://github.com/tree-sitter/tree-sitter-toml")
           (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
           (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+          ;; (nix "https://github.com/nix-community/tree-sitter-nix")
           (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
 
@@ -636,13 +669,8 @@ This is a basic configuration for the TypeScript language so that .ts files acti
 
 #+begin_src emacs-lisp
 
-  (use-package nix-mode
-    :defer t
-    :ensure t)
-  (use-package nix-ts-mode
-    :mode "\\.nix\\'"
-    :ensure t
-    :defer t)
+  ;; (use-package nix-ts-mode
+  ;;  :mode "\\.nix\\'")
 
 #+end_src
 
@@ -898,7 +926,9 @@ For more thoughts on Eshell, check out these articles by Pierre Neidhardt:
     :config
     (evil-collection-define-key 'normal 'dired-mode-map
       "h" 'dired-up-directory
-      "l" 'dired-find-file))
+      "l" 'dired-find-file
+      "n" 'dired-create-empty-file
+      "N" 'dired-create-directory))
 
   (use-package dired-open
     :config
