@@ -25,14 +25,14 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-(use-package auto-package-update
-  :custom
-  (auto-package-update-interval 7) ;; interval to update in days
-  (auto-package-update-prompt-before-update t)
-  (auto-package-update-hide-results t) ;; hide updated packages, nil to show
-  :config
-  (auto-package-update-maybe) ;; will check wether it needs an update at startup time
-  (auto-package-update-at-time "09:00"))
+;; (use-package auto-package-update
+;;   :custom
+;;   (auto-package-update-interval 7) ;; interval to update in days
+;;   (auto-package-update-prompt-before-update t)
+;;   (auto-package-update-hide-results t) ;; hide updated packages, nil to show
+;;   :config
+;;   (auto-package-update-maybe) ;; will check wether it needs an update at startup time
+;;   (auto-package-update-at-time "09:00"))
 
 (defvar clover/default-font-size 120)
 
@@ -419,7 +419,7 @@
 (use-package tree-sitter-langs
   :ensure t)
 
-(setq go-ts-mode-indent-offset 4)
+(setq go-ts-mode-indent-offset 2)
 
 (setq treesit-language-source-alist
       '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -539,6 +539,32 @@
 
   (eshell-git-prompt-use-theme 'powerline))
 
+(autoload 'dired-single-buffer "dired-single" "" t)
+(autoload 'dired-single-buffer-mouse "dired-single" "" t)
+(autoload 'dired-single-magic-buffer "dired-single" "" t)
+(autoload 'dired-single-toggle-buffer-name "dired-single" "" t)
+
+(use-package dired
+  :ensure nil
+  :commands (dired dired-jump)
+  :bind (("C-x C-j" . dired-jump))
+  :custom ((dired-listing-switches "-agho --group-directories-first")) ;; puts the directories first and files after in the dired view
+  :config
+  (evil-collection-define-key 'normal 'dired-mode-map
+    "h" 'dired-up-directory
+    "l" 'dired-find-file
+    "n" 'dired-create-empty-file
+    "N" 'dired-create-directory))
+
+(use-package dired-open
+  :config
+  ;; Doesn't work as expected!
+  ;;(add-to-list 'dired-open-functions #'dired-open-xdg t)
+  (setq dired-open-extensions '(("png" . "feh")
+                                ("mkv" . "mpv"))))
+
+(setq delete-by-moving-to-trash t)
+
 (use-package dired-hide-dotfiles
   :hook (dired-mode . dired-hide-dotfiles-mode)
   :config
@@ -551,3 +577,7 @@
   ;; Install fonts if not already installed
   (unless (member "all-the-icons" (font-family-list))
     (all-the-icons-install-fonts t))) ;; `t` skips confirmation
+
+
+
+

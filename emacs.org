@@ -49,14 +49,14 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
 #+begin_src emacs-lisp
 
-  (use-package auto-package-update
-    :custom
-    (auto-package-update-interval 7) ;; interval to update in days
-    (auto-package-update-prompt-before-update t)
-    (auto-package-update-hide-results t) ;; hide updated packages, nil to show
-    :config
-    (auto-package-update-maybe) ;; will check wether it needs an update at startup time
-    (auto-package-update-at-time "09:00"))
+  ;; (use-package auto-package-update
+  ;;   :custom
+  ;;   (auto-package-update-interval 7) ;; interval to update in days
+  ;;   (auto-package-update-prompt-before-update t)
+  ;;   (auto-package-update-hide-results t) ;; hide updated packages, nil to show
+  ;;   :config
+  ;;   (auto-package-update-maybe) ;; will check wether it needs an update at startup time
+  ;;   (auto-package-update-at-time "09:00"))
 
 #+end_src
 
@@ -534,17 +534,17 @@ To execute or export code in =org-mode= code blocks, you will need to setup =org
 #+begin_src emacs-lisp
 
 
-  (defun clover/lsp-mode-setup ()
-    (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-    (lsp-headerline-breadcrumb-mode))
+  ;; (defun clover/lsp-mode-setup ()
+  ;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  ;;   (lsp-headerline-breadcrumb-mode))
 
-  (use-package lsp-mode
-    :commands (lsp lsp-deferred)
-    :hook (lsp-mode . clover/lsp-mode-setup)
-    :init
-    (setq lsp-keymap-prefix "C-c l")
-    :config
-    (lsp-enable-which-key-integration t))
+  ;; (use-package lsp-mode
+  ;;   :commands (lsp lsp-deferred)
+  ;;   :hook (lsp-mode . clover/lsp-mode-setup)
+  ;;   :init
+  ;;   (setq lsp-keymap-prefix "C-c l")
+  ;;   :config
+  ;;   (lsp-enable-which-key-integration t))
 
 
 
@@ -636,7 +636,7 @@ This is a basic configuration for the TypeScript language so that .ts files acti
   (use-package tree-sitter-langs
     :ensure t)
 
-  (setq go-ts-mode-indent-offset 4)
+  (setq go-ts-mode-indent-offset 2)
 
 #+end_src
 
