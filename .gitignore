@@ -1,0 +1,10 @@
+# Emacs generated files
+.cache/
+auto-save-list/
+eln-cache/
+elpa/
+eshell/
+transient/
+tree-sitter/
+projectile-bookmarks.eld
+.last-package-update-day
