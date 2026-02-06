@@ -6,21 +6,6 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
 *NOTE*: I do not provide support
 
-* Startup Performance
-
-#+begin_src emacs-lisp
-
-  (defun clover/display-startup-time ()
-    (message "Emacs loaded in %s with %d garbage collections."
-             (format "%.2f seconds"
-                     (float-time
-                      (time-subtract after-init-time before-init-time)))
-             gcs-done))
-
-  (add-hook 'emacs-startup-hook #'clover/display-startup-time)
-
-#+end_src
-
 * Package System Setup
 
 #+begin_src emacs-lisp
@@ -59,6 +44,19 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 
 #+end_src
 
+
+* Startup Performance
+
+** Garbage Collection
+#+begin_src emacs-lisp
+
+  (use-package gcmh
+    :config
+    (gcmh-mode 1)
+    (setq gcmh-cons-threshold 100000000))
+
+#+end_src
+
 * Basic UI Configuration
 
 #+begin_src emacs-lisp 
@@ -90,12 +88,15 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
                   eshell-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (setq-default tab-width 2)
-              (setq indent-tabs-mode nil)))
+  ;; INDENTATION (global defaults)
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 2)
+  (electric-indent-mode 1)
 
-  (add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
+  ;; AUTO PAIRS
+  (electric-pair-mode 1)
+
+  ;; (add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
 
     #+end_src
 
@@ -144,6 +145,16 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
     :config
     (evil-collection-init))
 
+  (use-package embrace)
+  (use-package evil-embrace
+    :after evil
+    :config
+    (evil-embrace-enable-evil-surround-integration))
+
+  (use-package evil-commentary
+    :after evil
+    :config (evil-commentary-mode))
+
   ;; (unless (package-installed-p 'evil)
   ;;   (package-install 'evil))
 
@@ -189,7 +200,7 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
 #+begin_src emacs-lisp
 
   (use-package doom-themes ;; counsel-load-theme
-    :init (load-theme 'doom-peacock t))
+    :init (load-theme 'doom-tomorrow-night t)) ;; doom-peacock before
 
 #+end_src
 
@@ -258,6 +269,99 @@ This is my emacs configuration file build from scratch, now written in Org Mode.
              ("C-x C-f" . counsel-find-file)
              :map minibuffer-local-map
              ("C-r" . 'counsel-minibuffer-history)))
+
+#+end_src
+
+** Orderless
+
+#+begin_src emacs-lisp
+
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-defaults nil)
+    (completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+** Corfu  
+#+begin_src emacs-lisp
+
+  (use-package corfu
+    :custom
+    (corfu-cycle t) ;; Enable cycling for next and previous
+    (corfu-preselect 'prompt)
+    (corful-preselected 'directory) ;; Select first candidate, except for dirs
+    :init
+    (global-corfu-mode)
+    (corfu-popupinfo-mode)
+    :config
+    (keymap-unset corfu-map "RET")) ;; Unbind RET completely
+
+  (setq corfu-auto t
+        corfu-auto-prefix 1
+        corfu-on-exact-match 'quit
+        corfu-auto-delay 0.1
+        corfu-preview-current 1
+        corfu-popupinfo-delay '(0.0 . 0.2))
+
+  (use-package emacs
+    :custom
+    (tab-always-indent 'complete))
+
+  (with-eval-after-load 'corfu
+    (define-key corfu-map (kbd "TAB") #'corfu-insert)
+    (define-key corfu-map (kbd "<tab>") #'corfu-insert)
+    (define-key corfu-map (kbd "RET") #'corfu-insert))
+
+  (add-hook 'python-ts-mode-hook
+          (lambda ()
+            (setq-local completion-at-point-functions
+                        (list #'yasnippet-capf #'eglot-completion-at-point #'cape-file #'cape-dabbrev))))
+
+  (add-hook 'org-mode-hook
+          (lambda ()
+            (setq-local corfu-auto nil)))
+
+  ;; (with-eval-after-load 'corfu
+  ;;   (define-key corfu-map (kbd "TAB") #'corfu-insert)
+  ;;   (define-key corfu-map (kbd "<tab>") #'corfu-insert))
+
+#+end_src
+  
+** Cape
+#+begin_src emacs-lisp
+
+  (use-package cape
+    :bind ("M-p" . cape-prefix-map) ;; keymap providing all cape commands
+    :init
+    (add-hook 'completion-at-point-functions #'cape-dabbrev)
+    (add-hook 'completion-at-point-functions #'cape-line)
+    (add-hook 'completion-at-point-functions #'cape-file)
+    (add-hook 'completion-at-point-functions #'cape-elisp-block))
+
+#+end_src
+
+** Yasnippet
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :config
+    (yas-global-mode 1)
+    (setq yas-prompt-functions '(yas-no-prompt))
+    (add-to-list 'completion-at-point-functions #'yasnippet-capf))
+
+  (use-package yasnippet-snippets
+    :after yasnippet)
+#+end_src    
+
+** Kind-icon
+#+begin_src emacs-lisp
+
+  (use-package kind-icon
+    :after corfu
+    :custom
+    (kind-icon-default-face 'corfu-default)
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 #+end_src
 
@@ -528,23 +632,89 @@ To execute or export code in =org-mode= code blocks, you will need to setup =org
 
 ** Languages
 
-*** COMMENT Language Servers
+*** Tree-Sit
+#+begin_src emacs-lisp
+
+  ;; (setq treesit-language-source-alist
+  ;;       '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+  ;;         (cmake "https://github.com/uyha/tree-sitter-cmake")
+  ;;         (css "https://github.com/tree-sitter/tree-sitter-css")
+  ;;         (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+  ;;         (go "https://github.com/tree-sitter/tree-sitter-go")
+  ;;         (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+  ;;         (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+  ;;         (html "https://github.com/tree-sitter/tree-sitter-html")
+  ;;         (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+  ;;         (json "https://github.com/tree-sitter/tree-sitter-json")
+  ;;         (make "https://github.com/alemuller/tree-sitter-make")
+  ;;         (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+  ;;         (python "https://github.com/tree-sitter/tree-sitter-python")
+  ;;         (toml "https://github.com/tree-sitter/tree-sitter-toml")
+  ;;         (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+  ;;         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+  ;;         ;; (nix "https://github.com/nix-community/tree-sitter-nix")
+  ;;         (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+  (use-package treesit-auto
+    :defer 2
+    :config
+    (setq treesit-auto-install t
+          treesit-font-lock-level 4)
+    (global-treesit-auto-mode)
+    (treesit-auto-add-to-auto-mode-alist 'all))
+
+  (setq lsp-mode nil)
+  (fset 'lsp 'ignore)
+  (fset 'lsp-deferred 'ignore)
+
+
+#+end_src
+
+*** Eglot
 
 #+begin_src emacs-lisp
 
+  (use-package eglot
+    :ensure nil
+    :hook ((rust-ts-mode . eglot-ensure)
+           (go-ts-mode   . eglot-ensure)
+           (nix-ts-mode  . eglot-ensure)
+           (zig-ts-mode  . eglot-ensure)
+           (python-ts-mode . eglot-ensure))
+    :config
+    (add-to-list 'eglot-server-programs '(zig-ts-mode . ("zls")))
+    (add-to-list 'eglot-server-programs '(nix-ts-mode . ("nil")))
+    ;; Optional: format on save for eglot buffers only
+    (add-hook 'eglot-managed-mode-hook
+              (lambda ()
+                (add-hook 'before-save-hook #'eglot-format-buffer nil t))))
 
-  ;; (defun clover/lsp-mode-setup ()
-  ;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  ;;   (lsp-headerline-breadcrumb-mode))
+  (with-eval-after-load 'eglot
+    (setq completion-category-overrides
+          '((eglot (styles orderless))
+            (eglot-capf (styles orderless)))))
 
-  ;; (use-package lsp-mode
-  ;;   :commands (lsp lsp-deferred)
-  ;;   :hook (lsp-mode . clover/lsp-mode-setup)
-  ;;   :init
-  ;;   (setq lsp-keymap-prefix "C-c l")
-  ;;   :config
-  ;;   (lsp-enable-which-key-integration t))
 
+  (use-package eldoc-box
+    :config
+    (require 'eldoc-box))
+
+  (defvar clover/indent-width 2
+    "Indentation width used everywhere.")
+
+#+end_src
+
+*** HTML
+#+begin_src emacs-lisp
+
+  (use-package tagedit
+    :hook (html-mode . tagedit-mode)
+    :config
+    ;; optional but recommended
+    (tagedit-add-paredit-like-keybindings)
+
+    ;; experimental auto-insert/close behavior
+    (tagedit-add-experimental-features))
 
 
 #+end_src
@@ -562,23 +732,25 @@ Code formatting on save is enabled and will use rustfmt. To disable it set (setq
 
 #+begin_src emacs-lisp
 
-  (use-package rustic
-    :ensure
-    :config
-    ;; uncomment for less flashiness
-    ;; (setq lsp-eldoc-hook nil)
-    ;; (setq lsp-enable-symbol-highlighting nil)
-    ;; (setq lsp-signature-auto-activate nil)
+  ;; (use-package rustic
+  ;;   :ensure
+  ;;   :config
+  ;;   ;; uncomment for less flashiness
+  ;;   ;; (setq lsp-eldoc-hook nil)
+  ;;   ;; (setq lsp-enable-symbol-highlighting nil)
+  ;;   ;; (setq lsp-signature-auto-activate nil)
 
-    ;; comment to disable rustfmt on save
-                                          ;(setq rustic-format-on-save t)
-    (setq rustic-format-trigger 'on-save))
+  ;;   ;; comment to disable rustfmt on save
+  ;;                                         ;(setq rustic-format-on-save t)
+  ;;   (setq rustic-format-trigger 'on-save))
 
-  (defun rustic-mode-auto-save-hook ()
-    "Enable auto-saving in rustic-mode buffers."
-    (when buffer-file-name
-      (setq-local compilation-ask-about-save nil)))
-  (add-hook 'rustic-mode-hook 'rustic-mode-auto-sav-hook)
+  ;; (defun rustic-mode-auto-save-hook ()
+  ;;   "Enable auto-saving in rustic-mode buffers."
+  ;;   (when buffer-file-name
+  ;;     (setq-local compilation-ask-about-save nil)))
+  ;; (add-hook 'rustic-mode-hook 'rustic-mode-auto-save-hook)
+
+  (setq-default rust-indent-offset 2)
 
 #+end_src
 
@@ -606,70 +778,25 @@ C-c C-t m python-skeleton-import
 C-c C-t t python-skeleton-try
 C-c C-t w python-skeleton-while
 
-
-*** TypeScript
-
-This is a basic configuration for the TypeScript language so that .ts files activate typescript-mode when opened. We’re also adding a hook to typescript-mode-hook to call lsp-deferred so that we activate lsp-mode to get LSP features every time we edit TypeScript code.
-=npm install -g typescript-language-server typescript=
-
 #+begin_src emacs-lisp
 
-  ;(use-package typescript-mode
-  ;  :mode "\\.ts\\'"
-   ; :hook (typescript-mode . lsp-deferred)
-    ;:config
-   ; (setq typescript-indent-level 2))
-  
+  (setq-default python-indent-offset 2)
+
 #+end_src
 
 
-*** Tree-Sitter
+*** CSS
 
 #+begin_src emacs-lisp
 
-  (use-package tree-sitter
-    :ensure t
-    :config
-    (global-tree-sitter-mode))
-
-  (use-package tree-sitter-langs
-    :ensure t)
-
-  (setq go-ts-mode-indent-offset 2)
+  (setq-default css-indent-offset 2)
 
 #+end_src
-
-#+begin_src emacs-lisp
-
-  (setq treesit-language-source-alist
-        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-          (cmake "https://github.com/uyha/tree-sitter-cmake")
-          (css "https://github.com/tree-sitter/tree-sitter-css")
-          (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-          (go "https://github.com/tree-sitter/tree-sitter-go")
-          (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-          (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-          (html "https://github.com/tree-sitter/tree-sitter-html")
-          (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-          (json "https://github.com/tree-sitter/tree-sitter-json")
-          (make "https://github.com/alemuller/tree-sitter-make")
-          (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-          (python "https://github.com/tree-sitter/tree-sitter-python")
-          (toml "https://github.com/tree-sitter/tree-sitter-toml")
-          (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-          ;; (nix "https://github.com/nix-community/tree-sitter-nix")
-          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
-
-
-#+end_src
-
 *** Nix
 
 #+begin_src emacs-lisp
 
-  ;; (use-package nix-ts-mode
-  ;;  :mode "\\.nix\\'")
+  
 
 #+end_src
 
@@ -874,13 +1001,13 @@ For more thoughts on Eshell, check out these articles by Pierre Neidhardt:
 
 **** Marking files:
 - =m= - Marks a file
--  =u= - Unmarks a file
+- =u= - Unmarks a file
 - =U= - Unmarks all files in buffer
--  =* t= / =t= - Inverts marked files in buffer
--  =% m= - Mark files in buffer using regular expression
--  =*= - Lots of other auto-marking functions
--  =k= / =K= - “Kill” marked items (refresh buffer with =g= / =g r= to get them back)
--  Many operations can be done on a single file if there are no active marks!
+- =* t= / =t= - Inverts marked files in buffer
+- =% m= - Mark files in buffer using regular expression
+- =*= - Lots of other auto-marking functions
+- =k= / =K= - “Kill” marked items (refresh buffer with =g= / =g r= to get them back)
+- Many operations can be done on a single file if there are no active marks!
 
 **** Copying and Renaming files:
 - =C= - Copy marked files (or if no files are marked, the current file)
@@ -978,4 +1105,3 @@ This allows to hide dotfiles from any directory with the purpose of getting a cl
 
 
 #+end_src
-

@@ -1,12 +1,3 @@
-(defun clover/display-startup-time ()
-  (message "Emacs loaded in %s with %d garbage collections."
-           (format "%.2f seconds"
-                   (float-time
-                    (time-subtract after-init-time before-init-time)))
-           gcs-done))
-
-(add-hook 'emacs-startup-hook #'clover/display-startup-time)
-
 ;; Initialize package sources
 (require 'package)
 
@@ -32,6 +23,11 @@
 ;;   :config
 ;;   (auto-package-update-maybe) ;; will check wether it needs an update at startup time
 ;;   (auto-package-update-at-time "09:00"))
+
+(use-package gcmh
+  :config
+  (gcmh-mode 1)
+  (setq gcmh-cons-threshold 100000000))
 
 (defvar clover/default-font-size 120)
 
@@ -60,12 +56,15 @@
                 eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-(add-hook 'prog-mode-hook
-          (lambda ()
-            (setq-default tab-width 2)
-            (setq indent-tabs-mode nil)))
+;; INDENTATION (global defaults)
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
+(electric-indent-mode 1)
 
-(add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
+;; AUTO PAIRS
+(electric-pair-mode 1)
+
+;; (add-hook 'nix-mode-hook (lambda () (setq tab-width 2)))
 
 (set-face-attribute 'default nil :family "Fira Code" :height clover/default-font-size)
 
@@ -100,6 +99,16 @@
   :after evil
   :config
   (evil-collection-init))
+
+(use-package embrace)
+(use-package evil-embrace
+  :after evil
+  :config
+  (evil-embrace-enable-evil-surround-integration))
+
+(use-package evil-commentary
+  :after evil
+  :config (evil-commentary-mode))
 
 ;; (unless (package-installed-p 'evil)
 ;;   (package-install 'evil))
@@ -136,7 +145,7 @@
 (define-key evil-insert-state-map (kbd "j") 'my-jk)
 
 (use-package doom-themes ;; counsel-load-theme
-  :init (load-theme 'doom-peacock t))
+  :init (load-theme 'doom-tomorrow-night t)) ;; doom-peacock before
 
 (use-package all-the-icons)
 
@@ -181,6 +190,76 @@
          ("C-x C-f" . counsel-find-file)
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles partial-completion)))))
+
+(use-package corfu
+  :custom
+  (corfu-cycle t) ;; Enable cycling for next and previous
+  (corfu-preselect 'prompt)
+  (corful-preselected 'directory) ;; Select first candidate, except for dirs
+  :init
+  (global-corfu-mode)
+  (corfu-popupinfo-mode)
+  :config
+  (keymap-unset corfu-map "RET")) ;; Unbind RET completely
+
+(setq corfu-auto t
+      corfu-auto-prefix 1
+      corfu-on-exact-match 'quit
+      corfu-auto-delay 0.1
+      corfu-preview-current 1
+      corfu-popupinfo-delay '(0.0 . 0.2))
+
+(use-package emacs
+  :custom
+  (tab-always-indent 'complete))
+
+(with-eval-after-load 'corfu
+  (define-key corfu-map (kbd "TAB") #'corfu-insert)
+  (define-key corfu-map (kbd "<tab>") #'corfu-insert)
+  (define-key corfu-map (kbd "RET") #'corfu-insert))
+
+(add-hook 'python-ts-mode-hook
+        (lambda ()
+          (setq-local completion-at-point-functions
+                      (list #'yasnippet-capf #'eglot-completion-at-point #'cape-file #'cape-dabbrev))))
+
+(add-hook 'org-mode-hook
+        (lambda ()
+          (setq-local corfu-auto nil)))
+
+;; (with-eval-after-load 'corfu
+;;   (define-key corfu-map (kbd "TAB") #'corfu-insert)
+;;   (define-key corfu-map (kbd "<tab>") #'corfu-insert))
+
+(use-package cape
+  :bind ("M-p" . cape-prefix-map) ;; keymap providing all cape commands
+  :init
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-line)
+  (add-hook 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-elisp-block))
+
+(use-package yasnippet
+  :config
+  (yas-global-mode 1)
+  (setq yas-prompt-functions '(yas-no-prompt))
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf))
+
+(use-package yasnippet-snippets
+  :after yasnippet)
+
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 (use-package helpful
   :custom
@@ -386,62 +465,100 @@
       (org-export-to-file 'md output-file)
       (message "Exported to %s" output-file)))
 
-(use-package rustic
-  :ensure
+;; (setq treesit-language-source-alist
+;;       '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+;;         (cmake "https://github.com/uyha/tree-sitter-cmake")
+;;         (css "https://github.com/tree-sitter/tree-sitter-css")
+;;         (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+;;         (go "https://github.com/tree-sitter/tree-sitter-go")
+;;         (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
+;;         (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+;;         (html "https://github.com/tree-sitter/tree-sitter-html")
+;;         (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+;;         (json "https://github.com/tree-sitter/tree-sitter-json")
+;;         (make "https://github.com/alemuller/tree-sitter-make")
+;;         (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+;;         (python "https://github.com/tree-sitter/tree-sitter-python")
+;;         (toml "https://github.com/tree-sitter/tree-sitter-toml")
+;;         (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+;;         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+;;         ;; (nix "https://github.com/nix-community/tree-sitter-nix")
+;;         (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+(use-package treesit-auto
+  :defer 2
   :config
-  ;; uncomment for less flashiness
-  ;; (setq lsp-eldoc-hook nil)
-  ;; (setq lsp-enable-symbol-highlighting nil)
-  ;; (setq lsp-signature-auto-activate nil)
+  (setq treesit-auto-install t
+        treesit-font-lock-level 4)
+  (global-treesit-auto-mode)
+  (treesit-auto-add-to-auto-mode-alist 'all))
 
-  ;; comment to disable rustfmt on save
-                                        ;(setq rustic-format-on-save t)
-  (setq rustic-format-trigger 'on-save))
+(setq lsp-mode nil)
+(fset 'lsp 'ignore)
+(fset 'lsp-deferred 'ignore)
 
-(defun rustic-mode-auto-save-hook ()
-  "Enable auto-saving in rustic-mode buffers."
-  (when buffer-file-name
-    (setq-local compilation-ask-about-save nil)))
-(add-hook 'rustic-mode-hook 'rustic-mode-auto-sav-hook)
-
-;(use-package typescript-mode
-;  :mode "\\.ts\\'"
- ; :hook (typescript-mode . lsp-deferred)
-  ;:config
- ; (setq typescript-indent-level 2))
-
-(use-package tree-sitter
-  :ensure t
+(use-package eglot
+  :ensure nil
+  :hook ((rust-ts-mode . eglot-ensure)
+         (go-ts-mode   . eglot-ensure)
+         (nix-ts-mode  . eglot-ensure)
+         (zig-ts-mode  . eglot-ensure)
+         (python-ts-mode . eglot-ensure))
   :config
-  (global-tree-sitter-mode))
+  (add-to-list 'eglot-server-programs '(zig-ts-mode . ("zls")))
+  (add-to-list 'eglot-server-programs '(nix-ts-mode . ("nil")))
+  ;; Optional: format on save for eglot buffers only
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (add-hook 'before-save-hook #'eglot-format-buffer nil t))))
 
-(use-package tree-sitter-langs
-  :ensure t)
+(with-eval-after-load 'eglot
+  (setq completion-category-overrides
+        '((eglot (styles orderless))
+          (eglot-capf (styles orderless)))))
 
-(setq go-ts-mode-indent-offset 2)
 
-(setq treesit-language-source-alist
-      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-        (cmake "https://github.com/uyha/tree-sitter-cmake")
-        (css "https://github.com/tree-sitter/tree-sitter-css")
-        (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-        (go "https://github.com/tree-sitter/tree-sitter-go")
-        (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
-        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-        (html "https://github.com/tree-sitter/tree-sitter-html")
-        (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-        (json "https://github.com/tree-sitter/tree-sitter-json")
-        (make "https://github.com/alemuller/tree-sitter-make")
-        (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-        (python "https://github.com/tree-sitter/tree-sitter-python")
-        (toml "https://github.com/tree-sitter/tree-sitter-toml")
-        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-        ;; (nix "https://github.com/nix-community/tree-sitter-nix")
-        (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+(use-package eldoc-box
+  :config
+  (require 'eldoc-box))
 
-;; (use-package nix-ts-mode
-;;  :mode "\\.nix\\'")
+(defvar clover/indent-width 2
+  "Indentation width used everywhere.")
+
+(use-package tagedit
+  :hook (html-mode . tagedit-mode)
+  :config
+  ;; optional but recommended
+  (tagedit-add-paredit-like-keybindings)
+
+  ;; experimental auto-insert/close behavior
+  (tagedit-add-experimental-features))
+
+;; (use-package rustic
+;;   :ensure
+;;   :config
+;;   ;; uncomment for less flashiness
+;;   ;; (setq lsp-eldoc-hook nil)
+;;   ;; (setq lsp-enable-symbol-highlighting nil)
+;;   ;; (setq lsp-signature-auto-activate nil)
+
+;;   ;; comment to disable rustfmt on save
+;;                                         ;(setq rustic-format-on-save t)
+;;   (setq rustic-format-trigger 'on-save))
+
+;; (defun rustic-mode-auto-save-hook ()
+;;   "Enable auto-saving in rustic-mode buffers."
+;;   (when buffer-file-name
+;;     (setq-local compilation-ask-about-save nil)))
+;; (add-hook 'rustic-mode-hook 'rustic-mode-auto-save-hook)
+
+(setq-default rust-indent-offset 2)
+
+(setq-default python-indent-offset 2)
+
+(setq-default css-indent-offset 2)
+
+
 
 (use-package projectile
   :diminish projectile-mode
