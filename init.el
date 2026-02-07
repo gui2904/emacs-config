@@ -110,22 +110,6 @@
   :after evil
   :config (evil-commentary-mode))
 
-;; (unless (package-installed-p 'evil)
-;;   (package-install 'evil))
-
-;; (use-package evil-collection
-;;   :ensure t
-;;   :after evil
-;;   :init
-;;   (evil-collection-init))
-
-;; ;; Enable Evil
-;; (setq evil-want-keybinding nil)
-;; (require 'evil)
-;; (evil-mode 1)
-;; (when (require 'evil-collection nil t)
-;;   (evil-collection-init))
-
 ;; Makes "jk" quit insert mode
 (defun my-jk ()
   (interactive)
@@ -145,7 +129,6 @@
 (define-key evil-insert-state-map (kbd "j") 'my-jk)
 
 ;; Changes default promote/demote keybinds from M-<arrow> to C-S-<arrow>
-(with-eval-after-load 'org
   ;; Promote/demote item/subtree
   (define-key org-mode-map (kbd "C-S-<left>")  #'org-metaleft)
   (define-key org-mode-map (kbd "C-S-<right>") #'org-metaright)
@@ -450,13 +433,13 @@
   :hook (org-mode . clover/org-mode-visual-fill))
 
 (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (python . t)))
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)))
 
-  (push '("conf-unix" . conf-unix) org-src-lang-modes)
+(push '("conf-unix" . conf-unix) org-src-lang-modes)
 
- (require 'org-tempo)
+(require 'org-tempo)
 
 (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
 (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
@@ -474,12 +457,12 @@
 
 (require 'ox-md)
 
-  (defun org-to-readme ()
-    "Export the current Org file to README.md."
-    (interactive)
-    (let ((output-file "README.md"))
-      (org-export-to-file 'md output-file)
-      (message "Exported to %s" output-file)))
+(defun org-to-readme ()
+  "Export the current Org file to README.md."
+  (interactive)
+  (let ((output-file "README.md"))
+    (org-export-to-file 'md output-file)
+    (message "Exported to %s" output-file)))
 
 ;; (setq treesit-language-source-alist
 ;;       '((bash "https://github.com/tree-sitter/tree-sitter-bash")
