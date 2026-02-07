@@ -69,10 +69,10 @@
 (set-face-attribute 'default nil :family "Fira Code" :height clover/default-font-size)
 
 ;; Set the fixed pitch face
-(set-face-attribute 'fixed-pitch nil :family "Fira Code" :height 120)
+(set-face-attribute 'fixed-pitch nil :family "Fira Code")
 
 ;; Set the variable pitch face
-(set-face-attribute 'variable-pitch nil :family "Cantarell" :height 100 :weight 'regular)
+(set-face-attribute 'variable-pitch nil :family "Cantarell")
 
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -143,6 +143,22 @@
       (insert initial-key))))
 
 (define-key evil-insert-state-map (kbd "j") 'my-jk)
+
+;; Changes default promote/demote keybinds from M-<arrow> to C-S-<arrow>
+(with-eval-after-load 'org
+  ;; Promote/demote item/subtree
+  (define-key org-mode-map (kbd "C-S-<left>")  #'org-metaleft)
+  (define-key org-mode-map (kbd "C-S-<right>") #'org-metaright)
+
+  ;; Move item/subtree up/down
+  (define-key org-mode-map (kbd "C-S-<up>")    #'org-metaup)
+  (define-key org-mode-map (kbd "C-S-<down>")  #'org-metadown)
+
+  ;; Optional: free the original Alt+arrow bindings so they stop doing this
+  (define-key org-mode-map (kbd "M-<left>")  nil)
+  (define-key org-mode-map (kbd "M-<right>") nil)
+  (define-key org-mode-map (kbd "M-<up>")    nil)
+  (define-key org-mode-map (kbd "M-<down>")  nil))
 
 (use-package doom-themes ;; counsel-load-theme
   :init (load-theme 'doom-tomorrow-night t)) ;; doom-peacock before
